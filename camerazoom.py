@@ -8,7 +8,7 @@ mp_draw = mp.solutions.drawing_utils
 
 cap = cv2.VideoCapture(0)
 
-# 👇 Insert this check here
+
 if not cap.isOpened():
     print("❌ Could not access the camera. Is it connected and available?")
     exit(1)
