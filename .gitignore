@@ -1,5 +1,37 @@
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+*.env
+
+# VS Code settings
+.vscode/
+
+# Docker
+*.tar
+*.img
 *.log
-.env
-*.DS_Store
+docker-compose.override.yml
+
+# Node.js (if used in frontend)
+node_modules/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
