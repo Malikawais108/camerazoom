@@ -6,64 +6,39 @@ pipeline {
     }
 
     stages {
-        stage('Clone') {
+        stage('Debug Setup') {
             steps {
-                echo '📥 Cloning CameraZoom repository...'
-                checkout scm
-            }
-        }
-
-        stage('Setup Environment') {
-            steps {
-                echo '🐍 Creating Python virtual environment and installing dependencies...'
+                echo '🔍 Starting debug setup...'
                 sh '''
+                    echo "Current directory: $(pwd)"
+                    echo "Listing files:"
+                    ls -la
+
+                    echo "Creating virtualenv..."
                     python3 -m venv $PYTHON_ENV
-                    if [ ! -f "$PYTHON_ENV/bin/activate" ]; then
-                        echo "❌ Virtualenv creation failed!"
-                        exit 1
-                    fi
+
+                    echo "Checking if activate script exists:"
+                    ls -la $PYTHON_ENV/bin/activate || echo "❌ Missing activate script"
+
+                    echo "Activating virtualenv..."
                     . $PYTHON_ENV/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+
+                    echo "Python version:"
+                    python --version || echo "❌ Python not found"
+
+                    echo "Pip version:"
+                    pip --version || echo "❌ Pip not found"
+
+                    echo "Installing dependencies..."
+                    pip install -r requirements.txt || echo "❌ requirements.txt failed"
                 '''
-            }
-        }
-
-        stage('Run App') {
-            steps {
-                echo '🚀 Running CameraZoom...'
-                sh '''
-                    if [ ! -f "camerazoom.py" ]; then
-                        echo "❌ camerazoom.py not found!"
-                        exit 1
-                    fi
-                    . $PYTHON_ENV/bin/activate
-                    python camerazoom.py
-                '''
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                echo '🐳 Building Docker image...'
-                sh 'docker build -t camerazoom:latest .'
-            }
-        }
-
-        stage('Archive Artifacts') {
-            steps {
-                echo '📦 Archiving build artifacts...'
-                archiveArtifacts artifacts: '**/dist/*', fingerprint: true
             }
         }
     }
 
     post {
-        success {
-            echo '✅ Build completed successfully!'
-        }
-        failure {
-            echo '❌ Build failed. Check logs for details.'
+        always {
+            echo '🧪 Debug stage completed.'
         }
     }
 }
