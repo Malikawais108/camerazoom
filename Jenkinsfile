@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -18,8 +19,8 @@ pipeline {
                 echo 'Creating Python virtual environment and installing dependencies...'
                 sh '''
                     python3 -m venv $PYTHON_ENV
-                    . $PYTHON_ENV/bin/activate && \
-                    pip install --upgrade pip && \
+                    . $PYTHON_ENV/bin/activate
+                    pip install --upgrade pip
                     pip install -r requirements.txt
                 '''
             }
@@ -29,7 +30,7 @@ pipeline {
             steps {
                 echo 'Running CameraZoom...'
                 sh '''
-                    . $PYTHON_ENV/bin/activate && \
+                    . $PYTHON_ENV/bin/activate
                     python camerazoom.py
                 '''
             }
@@ -38,12 +39,23 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                sh '''
-                    docker build -t camerazoom:latest .
-                '''
+                sh 'docker build -t camerazoom:latest .'
             }
         }
 
-        // Optional: Add deployment or push to DockerHub later
+        stage('Archive Artifacts') {
+            steps {
+                archiveArtifacts artifacts: '**/dist/*', fingerprint: true
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Build completed successfully!'
+        }
+        failure {
+            echo '❌ Build failed. Check logs for details.'
+        }
     }
 }
