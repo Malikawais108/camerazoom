@@ -85,6 +85,19 @@ pipeline {
             }
         }
 
+        stage('Push to DockerHub') {
+            steps {
+                echo '📤 Pushing Docker image to DockerHub...'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker tag camerazoom:latest $DOCKER_USER/camerazoom:latest
+                        docker push $DOCKER_USER/camerazoom:latest
+                    '''
+                }
+            }
+        }
+
         stage('Archive Artifacts') {
             steps {
                 echo '📦 Archiving test results and build outputs...'
@@ -102,7 +115,7 @@ pipeline {
         }
         always {
             echo '🧹 Cleaning up workspace...'
-            cleanWs()
+            // cleanWs() — enable this after installing Workspace Cleanup Plugin
         }
     }
 }
