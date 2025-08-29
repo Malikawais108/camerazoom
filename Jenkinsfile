@@ -6,6 +6,15 @@ pipeline {
     }
 
     stages {
+        stage('Tag Build') {
+            steps {
+                script {
+                    def commit = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    currentBuild.displayName = "#${BUILD_NUMBER} - ${commit}"
+                }
+            }
+        }
+
         stage('Clone') {
             steps {
                 echo '📥 Cloning CameraZoom repository...'
@@ -15,13 +24,15 @@ pipeline {
 
         stage('Setup Environment') {
             steps {
-                echo '🐍 Creating Python virtual environment and installing dependencies...'
+                echo '🐍 Setting up Python environment...'
                 sh '''
-                    python3 -m venv $PYTHON_ENV
-                    if [ ! -f "$PYTHON_ENV/bin/activate" ]; then
-                        echo "❌ Virtualenv creation failed!"
+                    set -e
+                    if [ ! -f "requirements.txt" ]; then
+                        echo "❌ requirements.txt not found!"
                         exit 1
                     fi
+
+                    python3 -m venv $PYTHON_ENV
                     . $PYTHON_ENV/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
@@ -31,8 +42,9 @@ pipeline {
 
         stage('Test') {
             steps {
-                echo '🧪 Running unit tests with pytest...'
+                echo '🧪 Running unit tests...'
                 sh '''
+                    set -e
                     . $PYTHON_ENV/bin/activate
                     pytest tests/ --maxfail=1 --disable-warnings --junitxml=test-results.xml
                 '''
@@ -41,8 +53,9 @@ pipeline {
 
         stage('Run App') {
             steps {
-                echo '🚀 Running CameraZoom...'
+                echo '🚀 Executing CameraZoom...'
                 sh '''
+                    set -e
                     if [ ! -f "camerazoom.py" ]; then
                         echo "❌ camerazoom.py not found!"
                         exit 1
@@ -56,13 +69,20 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo '🐳 Building Docker image...'
-                sh 'docker build -t camerazoom:latest .'
+                sh '''
+                    set -e
+                    if [ ! -f "Dockerfile" ]; then
+                        echo "❌ Dockerfile missing!"
+                        exit 1
+                    fi
+                    docker build -t camerazoom:latest .
+                '''
             }
         }
 
         stage('Archive Artifacts') {
             steps {
-                echo '📦 Archiving test results and build artifacts...'
+                echo '📦 Archiving test results and build outputs...'
                 archiveArtifacts artifacts: '**/test-results.xml, **/dist/*', fingerprint: true
             }
         }
@@ -74,6 +94,10 @@ pipeline {
         }
         failure {
             echo '❌ Build failed. Check logs for details.'
+        }
+        always {
+            echo '🧹 Cleaning up workspace...'
+            cleanWs()
         }
     }
 }
