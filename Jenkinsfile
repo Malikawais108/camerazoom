@@ -27,6 +27,10 @@ pipeline {
                 echo '🐍 Setting up Python environment...'
                 sh '''
                     set -e
+                    echo "📂 Current directory: $(pwd)"
+                    echo "📄 Listing files:"
+                    ls -la
+
                     if [ ! -f "requirements.txt" ]; then
                         echo "❌ requirements.txt not found!"
                         exit 1
@@ -45,6 +49,9 @@ pipeline {
                 echo '🧪 Running unit tests...'
                 sh '''
                     set -e
+                    echo "📄 Listing test files:"
+                    ls -la tests/
+
                     . $PYTHON_ENV/bin/activate
                     pytest tests/ --maxfail=1 --disable-warnings --junitxml=test-results.xml
                 '''
@@ -56,10 +63,9 @@ pipeline {
                 echo '🚀 Executing CameraZoom...'
                 sh '''
                     set -e
-                    if [ ! -f "camerazoom.py" ]; then
-                        echo "❌ camerazoom.py not found!"
-                        exit 1
-                    fi
+                    echo "📄 Checking for camerazoom.py:"
+                    ls -la camerazoom.py || (echo "❌ camerazoom.py not found!" && exit 1)
+
                     . $PYTHON_ENV/bin/activate
                     python camerazoom.py
                 '''
@@ -71,10 +77,9 @@ pipeline {
                 echo '🐳 Building Docker image...'
                 sh '''
                     set -e
-                    if [ ! -f "Dockerfile" ]; then
-                        echo "❌ Dockerfile missing!"
-                        exit 1
-                    fi
+                    echo "📄 Checking for Dockerfile:"
+                    ls -la Dockerfile || (echo "❌ Dockerfile missing!" && exit 1)
+
                     docker build -t camerazoom:latest .
                 '''
             }
